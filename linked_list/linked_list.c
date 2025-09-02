@@ -189,7 +189,112 @@ struct Node *linked_list_get(struct LinkedList *list, int index) {
     return NULL;
 }
 
-// TODO: Implement insertion, removal methods
+bool linked_list_insert(struct LinkedList *list, int index, int val) {
+    if (list == NULL || index < 0 || index > list->len) {
+        return false;
+    }
+
+    // if index is 0, just prepend to the list
+    if (index == 0) {
+        return linked_list_prepend(list, val);
+    }
+
+    // if index is the length of the list, then append
+    // to the end of the list
+    if (index == list->len) {
+        return linked_list_append(list, val);
+    }
+
+    // otherwise, insert in the middle of a list
+    // start by getting the element at the current index
+    struct Node *current = linked_list_get(list, index);
+    struct Node *new_node = create_node(val);
+    if (current == NULL) {
+        return false;
+    }
+
+    // insert before the current node, pushing
+    // everything past that index to the next
+    // index
+    current->prev->next = new_node; // have the previous node point to the new node as next
+    new_node->prev = current->prev; // have the new node point to the current node's prev node as prev
+    new_node->next = current;       // have the new node point to the current node as next
+    current->prev = new_node;       // have the current node point to the new node as previous
+
+    // increase length list
+    list->len = list->len + 1;
+
+    return true;
+}
+
+bool linked_list_remove(struct LinkedList *list, int index) {
+    // return false if the list is null, the index
+    // is not in the range of indices for the list,
+    // or if the list length is 0
+    if (list == NULL || index < 0 || index >= list->len) {
+        return false;
+    }
+
+    // check if we're removing the only node in the list
+    if (list->len == 1) {
+        free(list->head);
+        list->head = NULL;
+        list->tail = NULL;
+
+        list->len = 0;
+        return true;
+    }
+
+    // check if we're removing the first or last node
+    // for a list with at least 2 elements
+    if (index == 0) {
+        // keep a reference to the second node
+        struct Node *first_node = list->head;
+        struct Node *second_node = first_node->next;
+        second_node->prev = NULL;
+        list->head = second_node;
+        free(first_node);
+
+        list->len = list->len - 1;
+
+        return true;
+    }
+
+    if (index == list->len - 1) {
+        // keep references to second to last and last node
+        struct Node *last_node = list->tail;
+        struct Node *second_to_last_node = list->tail->prev;
+        second_to_last_node->next = NULL;
+        list->tail = second_to_last_node;
+        free(last_node);
+
+        list->len = list->len - 1;
+
+        return true;
+    }
+
+    // we now have the node needing removal
+    // remove it by having linked list pointers
+    // skip this node and then freeing the node
+    // from memory
+    struct Node *node_to_remove = linked_list_get(list, index);
+    if (node_to_remove == NULL) {
+        return false;
+    }
+
+    // keep references of node before and node after
+    // the node we need to remove
+    struct Node *node_prev = node_to_remove->prev;
+    struct Node *node_next = node_to_remove->next;
+    // have node references skip over the node we are removing
+    node_prev->next = node_next;
+    node_next->prev = node_prev;
+    free(node_to_remove);
+
+    list->len = list->len - 1;
+
+    return true;
+}
 
 int main(void) {
 
@@ -248,6 +353,40 @@ int main(void) {
     } else {
         printf("Linked List val at index %d not found\n", index_c);
     }
+    printf("\n");
+
+    // test insertion
+    printf("Testing insertion of items by index\n");
+    linked_list_insert(&list, 6, 28);
+    printf("Linked list length: %d\n", list.len);
+    print_linked_list(&list);
+    printf("\n");
+
+    linked_list_insert(&list, 0, -12);
+    printf("Linked list length: %d\n", list.len);
+    print_linked_list(&list);
+    printf("\n");
+
+    linked_list_insert(&list, 15, 1982);
+    printf("Linked list length: %d\n", list.len);
+    print_linked_list(&list);
+    printf("\n");
+
+    // test removal
+    printf("Testing removal of items by index\n");
+    linked_list_remove(&list, 0);
+    printf("Linked list length: %d\n", list.len);
+    print_linked_list(&list);
+    printf("\n");
+
+    linked_list_remove(&list, 9);
+    printf("Linked list length: %d\n", list.len);
+    print_linked_list(&list);
+    printf("\n");
+
+    linked_list_remove(&list, 13);
+    printf("Linked list length: %d\n", list.len);
+    print_linked_list(&list);
     printf("\n");
 
     // free list once done
